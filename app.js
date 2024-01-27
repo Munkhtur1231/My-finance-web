@@ -12,6 +12,13 @@ var uiController = (function () {
     tusuvLabel: ".budget__value",
     percenageLabel: ".budget__expenses--percentage",
     containerDiv: ".container",
+    expensePercentageLabel: ".item__percentage",
+  };
+
+  var nodeListForEach = function (list, callback) {
+    for (var i = 0; i < list.length; i++) {
+      callback(list[i], i);
+    }
   };
 
   return {
@@ -50,8 +57,13 @@ var uiController = (function () {
         tusuv.totalInc;
       document.querySelector(DOMstrings.expeseLabel).textContent =
         tusuv.totalEXp;
-      document.querySelector(DOMstrings.percenageLabel).textContent =
-        tusuv.huvi + "%";
+      if (tusuv.huvi > 1000) {
+        document.querySelector(DOMstrings.percenageLabel).textContent =
+          "+1000%";
+      } else {
+        document.querySelector(DOMstrings.percenageLabel).textContent =
+          tusuv.huvi + "%";
+      }
     },
 
     addListItem: function (item, type) {
@@ -70,10 +82,20 @@ var uiController = (function () {
       html = html.replace("%id%", item.id);
       html = html.replace("$$DESCRIPTION$$", item.description);
       html = html.replace("$$VALUE$$", item.value);
-
       // Beltgesen html ee DOM  ruu hiij ugnu
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
+
+    displayPercentages: function (allPercentages) {
+      var elements = document.querySelectorAll(
+        DOMstrings.expensePercentageLabel
+      );
+      // Element bolgonii huvid zarlagiin huviig massivaas avch shivj oruulah
+      nodeListForEach(elements, function (el, index) {
+        el.textContent = allPercentages[index] + "%";
+      });
+    },
+
     deleteListItem: function (id) {
       var el = document.getElementById(id);
       el.parentNode.removeChild(el);
@@ -87,11 +109,23 @@ var financeController = (function () {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
   };
   var Expense = function (id, description, value) {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
+  };
+
+  Expense.prototype.calPercentage = function (totalIncoming) {
+    if (totalIncoming > 0)
+      this.percentage = Math.round((this.value / totalIncoming) * 100);
+    else this.percentage = 0;
+  };
+
+  Expense.prototype.getPercentage = function () {
+    return this.percentage;
   };
 
   var calculateTotal = function (type) {
@@ -127,7 +161,23 @@ var financeController = (function () {
       data.tusuv = data.totals.inc - data.totals.exp;
 
       // Orlogo zarlagiin huviig tootsoolno
-      data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      if (data.totals.exp > 0)
+        data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      else data.huvi = 0;
+    },
+
+    calculatePercentages: function () {
+      data.items.exp.forEach(function (el) {
+        el.calPercentage(data.totals.inc);
+      });
+    },
+
+    getPercentages: function () {
+      var allPercentages = data.items.exp.map(function (el) {
+        return el.getPercentage();
+      });
+
+      return allPercentages;
     },
 
     tusviigAvah: function () {
@@ -187,6 +237,7 @@ var appController = (function (uiController, financeController) {
       uiController.addListItem(item, input.type);
       uiController.clearFields();
 
+      // Tusviig shineer tootsoolood delgetsend uzuulne
       updateTusuv();
     }
   };
@@ -198,6 +249,12 @@ var appController = (function (uiController, financeController) {
     var tusuv = financeController.tusviigAvah();
     // 6. tootsoog delgetsend gargana
     uiController.tusviigUzuuleh(tusuv);
+    // 7. Huviig tootsoolno
+    financeController.calculatePercentages();
+    // 8. Elementuudiin huviig huleej avna
+    var allPercentages = financeController.getPercentages();
+    // 9. Delgetsend gargana
+    uiController.displayPercentages(allPercentages);
   };
 
   var setupEventListeners = function () {
@@ -239,6 +296,12 @@ var appController = (function (uiController, financeController) {
         totalInc: 0,
         totalExp: 0,
       });
+      var date = {
+        month: new Date().getMonth() + 1,
+        day: new Date().getDate(),
+      };
+      document.querySelector(".budget__title--month").textContent =
+        date.month + " сарын " + date.day;
       setupEventListeners();
     },
   };
