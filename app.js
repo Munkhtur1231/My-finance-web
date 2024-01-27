@@ -74,6 +74,10 @@ var uiController = (function () {
       // Beltgesen html ee DOM  ruu hiij ugnu
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
+    deleteListItem: function (id) {
+      var el = document.getElementById(id);
+      el.parentNode.removeChild(el);
+    },
   };
 })();
 
@@ -172,7 +176,7 @@ var appController = (function (uiController, financeController) {
     // 1. Oruulah ugugdliig delgetsees haij olno.
     var input = uiController.getInput();
 
-    if (input.value !== "" && input.description !== "") {
+    if (input.description !== "" && input.value !== "") {
       // 2. Olj avsan ugugdluudee sanhuugiin controllert damjuulj tend hadgalna.
       var item = financeController.addItem(
         input.type,
@@ -183,13 +187,17 @@ var appController = (function (uiController, financeController) {
       uiController.addListItem(item, input.type);
       uiController.clearFields();
 
-      // 4. Tusviig tootsoolno
-      financeController.tusuvTootsooloh();
-      // 5. Etssiin uldegdel
-      var tusuv = financeController.tusviigAvah();
-      // 6. tootsoog delgetsend gargana
-      uiController.tusviigUzuuleh(tusuv);
+      updateTusuv();
     }
+  };
+
+  var updateTusuv = function () {
+    // 4. Tusviig tootsoolno
+    financeController.tusuvTootsooloh();
+    // 5. Etssiin uldegdel
+    var tusuv = financeController.tusviigAvah();
+    // 6. tootsoog delgetsend gargana
+    uiController.tusviigUzuuleh(tusuv);
   };
 
   var setupEventListeners = function () {
@@ -215,8 +223,9 @@ var appController = (function (uiController, financeController) {
           // 1. Sanhuugiin modulaas type, id ashiglan ustgana
           financeController.deleteItem(type, itemId);
           // 2. Delgets deerees ene elementiig ustgana
-
+          uiController.deleteListItem(id);
           // 3. Uldegdel tootsoog shineshilj haruulna.
+          updateTusuv();
         }
       });
   };
