@@ -18,6 +18,26 @@ var uiController = (function () {
     getDOMstrings: function () {
       return DOMstrings;
     },
+    addListItem: function (item, type) {
+      // Orlogo zarlagiin elementiig aguulsan html elementiig beltgene
+      var html, list;
+      if (type === "inc") {
+        list = ".income__list";
+        html =
+          '<div class="item clearfix" id="income-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">+ $$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      } else {
+        list = ".expenses__list";
+        html =
+          '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">- $$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+      // Ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj uurchilnu
+      html = html.replace("%id%", item.id);
+      html = html.replace("$$DESCRIPTION$$", item.description);
+      html = html.replace("$$VALUE$$", item.value);
+
+      // Beltgesen html ee DOM  ruu hiij ugnu
+      document.querySelector(list).insertAdjacentHTML("beforeend", html);
+    },
   };
 })();
 
@@ -57,11 +77,7 @@ var financeController = (function () {
         item = new Expense(id, description, value);
       }
       data.items[type].push(item);
-      console.log("item nemlee");
-    },
-
-    seeData: function () {
-      return data;
+      return item;
     },
   };
 })();
@@ -73,9 +89,13 @@ var appController = (function (uiController, financeController) {
 
     var input = uiController.getInput();
     // 2. Olj avsan ugugdluudee sanhuugiin controllert damjuulj tend hadgalna.
-    financeController.addItem(input.type, input.description, input.value);
+    var item = financeController.addItem(
+      input.type,
+      input.description,
+      input.value
+    );
     // 3. Olj avsan ugugdluudee web deer gargana
-    console.log(financeController.seeData());
+    uiController.addListItem(item, input.type);
     // 4. Tusviig tootsoolno
     // 5. Etssiin uldegdel, tootsoog delgetsend gargana
   };
