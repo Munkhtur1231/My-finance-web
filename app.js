@@ -13,6 +13,7 @@ var uiController = (function () {
     percenageLabel: ".budget__expenses--percentage",
     containerDiv: ".container",
     expensePercentageLabel: ".item__percentage",
+    dateLabel: ".budget__title--month",
   };
 
   var nodeListForEach = function (list, callback) {
@@ -21,7 +22,48 @@ var uiController = (function () {
     }
   };
 
+  var formatBudget = function (too, type) {
+    too = too.toString();
+    if (too[0] === "-") too = too.substr(1, too.length - 1);
+    var x = too.split("").reverse().join("");
+    var y = "";
+    var count = 1;
+    for (var i = 0; i < x.length; i++) {
+      y += x[i];
+      if (count % 3 === 0) y += ",";
+      count++;
+    }
+    x = y.split("").reverse().join("");
+    if (x[0] === ",") x = x.substr(1, x.length - 1);
+    if (type === "inc") x = "+ " + x;
+    else x = "- " + x;
+    return x;
+  };
+
   return {
+    displayDate: function () {
+      var today = new Date();
+      document.querySelector(DOMstrings.dateLabel).textContent =
+        today.getFullYear() +
+        " оны " +
+        (today.getMonth() + 1) +
+        " сарын өрхийн санхүү";
+    },
+
+    changeType: function () {
+      var fields = document.querySelectorAll(
+        DOMstrings.inputType +
+          ", " +
+          DOMstrings.inputDescription +
+          ", " +
+          DOMstrings.inputValue
+      );
+      nodeListForEach(fields, function (el) {
+        el.classList.toggle("red-focus");
+      });
+      document.querySelector(DOMstrings.addBtn).classList.toggle("red");
+    },
+
     getInput: function () {
       return {
         type: document.querySelector(DOMstrings.inputType).value, // inc exp
@@ -52,11 +94,21 @@ var uiController = (function () {
     },
 
     tusviigUzuuleh: function (tusuv) {
-      document.querySelector(DOMstrings.tusuvLabel).textContent = tusuv.tusuv;
-      document.querySelector(DOMstrings.incomeLabel).textContent =
-        tusuv.totalInc;
-      document.querySelector(DOMstrings.expeseLabel).textContent =
-        tusuv.totalEXp;
+      var type;
+      if (tusuv.tusuv >= 0) type = "inc";
+      else type = "exp";
+      document.querySelector(DOMstrings.tusuvLabel).textContent = formatBudget(
+        tusuv.tusuv,
+        type
+      );
+      document.querySelector(DOMstrings.incomeLabel).textContent = formatBudget(
+        tusuv.totalInc,
+        "inc"
+      );
+      document.querySelector(DOMstrings.expeseLabel).textContent = formatBudget(
+        tusuv.totalExp,
+        "exp"
+      );
       if (tusuv.huvi > 1000) {
         document.querySelector(DOMstrings.percenageLabel).textContent =
           "+1000%";
@@ -72,16 +124,16 @@ var uiController = (function () {
       if (type === "inc") {
         list = DOMstrings.incomeList;
         html =
-          '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">+ $$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       } else {
         list = DOMstrings.expensesList;
         html =
-          '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">- $$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
       // Ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj uurchilnu
       html = html.replace("%id%", item.id);
       html = html.replace("$$DESCRIPTION$$", item.description);
-      html = html.replace("$$VALUE$$", item.value);
+      html = html.replace("$$VALUE$$", formatBudget(item.value, type));
       // Beltgesen html ee DOM  ruu hiij ugnu
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
@@ -185,7 +237,7 @@ var financeController = (function () {
         tusuv: data.tusuv,
         huvi: data.huvi,
         totalInc: data.totals.inc,
-        totalEXp: data.totals.exp,
+        totalExp: data.totals.exp,
       };
     },
 
@@ -285,6 +337,10 @@ var appController = (function (uiController, financeController) {
           updateTusuv();
         }
       });
+
+    document
+      .querySelector(DOM.inputType)
+      .addEventListener("change", uiController.changeType);
   };
 
   return {
@@ -296,12 +352,7 @@ var appController = (function (uiController, financeController) {
         totalInc: 0,
         totalExp: 0,
       });
-      var date = {
-        month: new Date().getMonth() + 1,
-        day: new Date().getDate(),
-      };
-      document.querySelector(".budget__title--month").textContent =
-        date.month + " сарын " + date.day;
+      uiController.displayDate();
       setupEventListeners();
     },
   };
